@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-SOC - Asistente de IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Encabezado / Navbar -->
+    <header class="w-full max-w-6xl mx-auto px-6 py-4 flex justify-between items-center border-b border-gray-800">
+        <div class="flex items-center space-x-2">
+            <a href="index.html" class="text-gray-400 hover:text-white transition mr-2">← Volver</a>
+            <span class="text-2xl">🤖</span>
+            <span class="text-xl font-bold tracking-wider text-blue-400">Analista IA - Nivel 1</span>
+        </div>
+        <span class="text-xs bg-green-950 text-green-400 border border-green-700 px-3 py-1 rounded-full font-mono flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> En Línea
+        </span>
+    </header>
+
+    <!-- Contenedor del Chat -->
+    <main class="w-full max-w-3xl mx-auto p-4 flex-grow flex flex-col justify-between overflow-hidden h-[calc(100vh-140px)]">
+        
+        <!-- Área de visualización de mensajes -->
+        <div id="chatWindow" class="flex-grow overflow-y-auto space-y-4 p-4 border border-gray-800 bg-gray-950/50 rounded-2xl mb-4 scrollbar-thin scrollbar-thumb-gray-800">
+            
+            <!-- Mensaje de bienvenida de la IA -->
+            <div class="flex items-start space-x-3 max-w-[85%]">
+                <div class="bg-blue-600 text-white p-2 rounded-xl text-lg shadow-md">🤖</div>
+                <div class="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-none border border-gray-700 text-sm">
+                    Saludos. Soy el asistente automatizado del Micro-SOC. Puedo ayudarte a evaluar sospechas de phishing, revisar si tu red hogareña es vulnerable o guiarte para levantar un ticket de soporte técnico. ¿Qué anomalía digital estás experimentando?
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Formulario de entrada de texto -->
+        <form id="chatForm" class="flex gap-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="Escribe tu consulta de seguridad aquí..." 
+                class="flex-grow bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none px-3"
+                required
+                autocomplete="off"
+            >
+            <button 
+                type="submit" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md flex items-center space-x-1"
+            >
+                <span>Enviar</span>
+                <span>⚡</span>
+            </button>
+        </form>
+
+    </main>
+
+    <!-- Script de Lógica e Integración -->
+    <script>
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+
+        // Función para agregar mensajes a la pantalla
+        function appendMessage(sender, text, avatar) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-3 max-w-[85%] ${sender === 'user' ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
+            
+            const avatarBg = sender === 'user' ? 'bg-indigo-600' : 'bg-blue-600';
+            const bubbleBg = sender === 'user' ? 'bg-indigo-900/40 border-indigo-700 text-indigo-100 rounded-tr-none' : 'bg-gray-800 border-gray-700 text-gray-200 rounded-tl-none';
+
+            messageDiv.innerHTML = `
+                <div class="${avatarBg} text-white p-2 rounded-xl text-lg shadow-md">${avatar}</div>
+                <div class="${bubbleBg} p-3 rounded-2xl border text-sm shadow-sm whitespace-pre-line">${text}</div>
+            `;
+            
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll al final
+        }
+
+        // Escuchar el evento de envío
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageText = userInput.value.trim();
+            if (!messageText) return;
+
+            // 1. Mostrar el mensaje del usuario en pantalla
+            appendMessage('user', messageText, '👤');
+            userInput.value = '';
+
+            // 2. Colocar un mensaje de "Escribiendo..." temporal
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = "flex items-start space-x-3 max-w-[85%] animate-pulse";
+            loadingDiv.innerHTML = `
+                <div class="bg-blue-600 text-white p-2 rounded-xl text-lg">🤖</div>
+                <div class="bg-gray-800 text-gray-400 p-3 rounded-2xl rounded-tl-none border border-gray-700 text-sm italic">
+                    Analizando trazas de datos...
+                </div>
+            `;
+            chatWindow.appendChild(loadingDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            try {
+                // =========================================================
+                // ESPACIO PARA CONECTAR EL BACKEND O LA API DE IA
+                // =========================================================
+                
+                // Simulación temporal de respuesta mientras definimos el proveedor:
+                await new Promise(resolve => setTimeout(resolve, 1500)); 
+                let aiResponse = "He recibido tu reporte sobre: '" + messageText + "'. Como analista del Micro-SOC, te sugiero aislar el dispositivo de la red de inmediato si sospechas de una infección activa, o proceder a llenar un reporte formal en nuestra sección de Tickets.";
+                
+                // =========================================================
+
+                // Quitar indicador de carga y pintar respuesta real de la IA
+                chatWindow.removeChild(loadingDiv);
+                appendMessage('ai', aiResponse, '🤖');
+
+            </tark (error) {
+                console.error("Error en la conexión con la IA:", error);
+                chatWindow.removeChild(loadingDiv);
+                appendMessage('ai', "⚠️ Error del sistema: No se pudo establecer comunicación con el núcleo de la IA.", '❌');
+            }
+        });
+    </script>
+
+</body>
+</html>
