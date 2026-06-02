@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Soporte - Micro-SOC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-center items-center p-6">
+
+    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-blue-400">🛡️ Micro-SOC</h1>
+            <p class="text-sm text-gray-400 mt-2">Centro de Reporte de Incidentes de Seguridad</p>
+        </div>
+
+        <form id="ticketForm" class="space-y-4">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300">Nombre Completo</label>
+                <input type="text" id="nombre" required class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300">Correo Electrónico</label>
+                <input type="email" id="correo" required class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300">Tipo de Incidente</label>
+                <select id="categoria" class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="vpn">Falla de Conexión VPN</option>
+                    <option value="antivirus">Alerta del Antivirus</option>
+                    <option value="phishing">Sospecha de Correo Falso (Phishing)</option>
+                    <option value="consulta">Consulta General de Seguridad</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300">Prioridad</label>
+                <select id="prioridad" class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="baja">🟢 Baja (No urge)</option>
+                    <option value="media">🟡 Media (Dificulta mi trabajo)</option>
+                    <option value="alta">🔴 Alta (Sospecha de Hackeo / Malware)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300">Descripción del problema</label>
+                <textarea id="descripcion" rows="4" required class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Describe brevemente lo que ocurre..."></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-lg transition duration-200">
+                Enviar Ticket de Soporte
+            </button>
+
+        </form>
+    </div>
+
+</body>
+</html>
