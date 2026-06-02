@@ -56,30 +56,40 @@
     
     <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
     
+    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
+    
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
-        const sendButton = chatForm.querySelector('button'); // Capturamos el botón para controlarlo
+        const sendButton = chatForm.querySelector('button');
 
         const BOT_ID = "a189e7b5-3cb5-4cb5-9ee1-1898247e2d0f"; 
 
-        // Deshabilitar entrada mientras inicializa
+        // Bloqueo temporal de UI mientras se sincroniza
         userInput.disabled = true;
         sendButton.disabled = true;
-        userInput.placeholder = "Inicializando analista de seguridad...";
+        userInput.placeholder = "Estableciendo canal seguro con el SOC...";
 
-        // Inicializar cliente oficial oculto
+        // Inicializar de forma estándar (Quitamos el "hideWidget" para evitar su bug interno)
         window.botpressWebChat.init({
             "botId": BOT_ID,
             "hostUrl": "https://cdn.botpress.cloud/webchat/v1",
             "messagingUrl": "https://messaging.botpress.cloud",
             "clientId": BOT_ID,
-            "hideWidget": true,
             "disableAnimations": true
         });
 
-        // Función para agregar mensajes visualmente a tu pantalla de Tailwind
+        // TRUCO DE INYECCIÓN CSS: Forzamos la desaparición del widget original de Botpress apenas aparezca
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #bp-webchat-container, .bpw-widget-button, #bpw-widget { 
+                display: none !important; 
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Renderizar mensajes en tu interfaz oscura de Tailwind
         function appendMessage(sender, text, avatar) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex items-start space-x-3 max-w-[85%] ${sender === 'user' ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
@@ -119,30 +129,30 @@
             }
         }
 
-        // CONTROL DE EVENTOS DE BOTPRESS
+        // Captura y gestión de eventos
         window.botpressWebChat.onEvent((event) => {
             
-            // 1. CUANDO EL WEBCHAT ESTÁ LISTO Y CONECTADO
+            // Cuando la API interna de mensajería está totalmente operativa
             if (event.type === 'LIFECYCLE.LOADED') {
                 userInput.disabled = false;
                 sendButton.disabled = false;
                 userInput.placeholder = "Escribe tu consulta de seguridad aquí...";
-                console.log("Botpress está listo para recibir tráfico.");
+                console.log("Conexión limpia establecida con éxito.");
             }
 
-            // 2. CUANDO LA IA ESTÁ PENSANDO
+            // Cuando la IA procesa
             if (event.type === 'START_TYPING' || event.type === 'TYPING') {
                 showLoading();
             }
 
-            // 3. CUANDO LLEGA UN MENSAJE DE LA IA
+            // Cuando la IA responde
             if (event.type === 'MESSAGE_RECEIVED') {
                 removeLoading();
                 
                 if (event.value && event.value.payload && event.value.payload.text) {
                     const aiText = event.value.payload.text;
                     
-                    // Evitar duplicar el saludo estático inicial del HTML si el bot lo repite
+                    // No duplicar el saludo pre-renderizado del HTML
                     if (!aiText.includes("Saludos. Soy el asistente automatizado")) {
                         appendMessage('ai', aiText, '🤖');
                     }
@@ -150,7 +160,7 @@
             }
         }, ['LIFECYCLE.LOADED', 'MESSAGE_RECEIVED', 'START_TYPING']);
 
-        // ENVÍO DEL FORMULARIO
+        // Procesar formulario de envío
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const messageText = userInput.value.trim();
@@ -166,9 +176,9 @@
                     text: messageText
                 });
             } catch (error) {
-                console.error("Error enviando mensaje a Botpress:", error);
+                console.error("Error al despachar comando:", error);
                 removeLoading();
-                appendMessage('ai', "⚠️ Error del sistema: No se pudo despachar el paquete de datos a la IA.", '❌');
+                appendMessage('ai', "⚠️ Error del sistema: Fallo en el despacho del paquete de datos.", '❌');
             }
         });
     </script>
