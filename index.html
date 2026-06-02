@@ -92,9 +92,10 @@
 
             if (error) {
                 alert("Hubo un error al enviar el ticket: " + error.message);
-                console.error(error);
+                console.error("Error completo de Supabase:", error);
             } else {
                 alert("🛡️ ¡Ticket enviado con éxito al Micro-SOC! Nos pondremos en contacto contigo.");
+                console.log("Respuesta de éxito:", data);
                 document.getElementById('ticketForm').reset();
             }
         });
