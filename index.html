@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Soporte - Micro-SOC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-center items-center p-6">
 
@@ -30,19 +31,19 @@
             <div>
                 <label class="block text-sm font-medium text-gray-300">Tipo de Incidente</label>
                 <select id="categoria" class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="vpn">Falla de Conexión VPN</option>
-                    <option value="antivirus">Alerta del Antivirus</option>
-                    <option value="phishing">Sospecha de Correo Falso (Phishing)</option>
-                    <option value="consulta">Consulta General de Seguridad</option>
+                    <option value="Falla de VPN">Falla de Conexión VPN</option>
+                    <option value="Alerta de Antivirus">Alerta del Antivirus</option>
+                    <option value="Sospecha de Phishing">Sospecha de Correo Falso (Phishing)</option>
+                    <option value="Consulta General">Consulta General de Seguridad</option>
                 </select>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-300">Prioridad</label>
                 <select id="prioridad" class="w-full mt-1 p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="baja">🟢 Baja (No urge)</option>
-                    <option value="media">🟡 Media (Dificulta mi trabajo)</option>
-                    <option value="alta">🔴 Alta (Sospecha de Hackeo / Malware)</option>
+                    <option value="Baja">🟢 Baja (No urge)</option>
+                    <option value="Media">🟡 Media (Dificulta mi trabajo)</option>
+                    <option value="Alta">🔴 Alta (Sospecha de Hackeo / Malware)</option>
                 </select>
             </div>
 
@@ -57,6 +58,47 @@
 
         </form>
     </div>
+
+    <script>
+        // CONFIGURACIÓN: Reemplaza esto con tus datos reales de Supabase
+        const SUPABASE_URL = "PEGA_AQUI_TU_PROJECT_URL";
+        const SUPABASE_ANON_KEY = "PEGA_AQUI_TU_ANON_PUBLIC_KEY";
+
+        // Inicializar Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Escuchar cuando el usuario le dé clic al botón de enviar
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombre').value;
+            const correo = document.getElementById('correo').value;
+            const categoria = document.getElementById('categoria').value;
+            const prioridad = document.getElementById('prioridad').value;
+            const descripcion = document.getElementById('descripcion').value;
+
+            // Guardar los datos en la tabla 'tickets' de Supabase
+            const { data, error } = await supabase
+                .from('tickets')
+                .insert([
+                    { 
+                        nombre: nombre, 
+                        correo: correo, 
+                        categoria: categoria, 
+                        prioridad: prioridad, 
+                        descripcion: descripcion 
+                    }
+                ]);
+
+            if (error) {
+                alert("Hubo un error al enviar el ticket: " + error.message);
+                console.error(error);
+            } else {
+                alert("🛡️ ¡Ticket enviado con éxito al Micro-SOC! Nos pondremos en contacto contigo.");
+                document.getElementById('ticketForm').reset();
+            }
+        });
+    </script>
 
 </body>
 </html>
