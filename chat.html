@@ -52,24 +52,29 @@
 
     </main>
 
+    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
+    
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
 
-        // =========================================================
-        // REEMPLAZA ESTOS DATOS CON TUS CREDENCIALES DE BOTPRESS
-        // =========================================================
+        // Configuración de tus credenciales
         const BOT_ID = "a189e7b5-3cb5-4cb5-9ee1-1898247e2d0f"; 
-        const BOT_API_KEY = "bp_bak_IolEnDY6ykP_AM01qrwuS2Ku8maN16-NapAF";
-        
-        // El endpoint estándar para interactuar con la API de Botpress Chat v1
-        const BASE_URL = `https://chat.botpress.cloud/v1`; 
 
-        // Variable para rastrear la conversación actual en la sesión del navegador
-        let conversationId = localStorage.getItem('micro_soc_conv_id') || null;
+        // 1. Inicializamos el cliente de Botpress en segundo plano (oculto)
+        window.botpressWebChat.init({
+            "composerPlaceholder": "Chat con Analista IA",
+            "botConversationDescription": "Micro-SOC",
+            "botId": BOT_ID,
+            "hostUrl": "https://cdn.botpress.cloud/webchat/v1",
+            "messagingUrl": "https://messaging.botpress.cloud",
+            "clientId": BOT_ID,
+            "hideWidget": true, // Oculta el botón flotante azul feo para usar TU diseño
+            "disableAnimations": true
+        });
 
-        // Función para agregar mensajes a la pantalla
+        // Función para agregar mensajes visualmente a TU pantalla de Tailwind
         function appendMessage(sender, text, avatar) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex items-start space-x-3 max-w-[85%] ${sender === 'user' ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
@@ -86,41 +91,12 @@
             chatWindow.scrollTop = chatWindow.scrollHeight; 
         }
 
-        // Función para inicializar una conversación en Botpress si no existe una
-        async function getOrCreateConversation() {
-            if (conversationId) return conversationId;
+        // Variable para controlar el estado de "Escribiendo..."
+        let loadingDiv = null;
 
-            try {
-                const response = await fetch(`${BASE_URL}/conversations`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${BOT_API_KEY}`,
-                        'x-bot-id': BOT_ID,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
-                const data = await response.json();
-                conversationId = data.conversation.id;
-                localStorage.setItem('micro_soc_conv_id', conversationId);
-                return conversationId;
-            } catch (err) {
-                console.error("Error creando la conversación en Botpress:", err);
-            }
-        }
-
-        // Escuchar el evento de envío
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const messageText = userInput.value.trim();
-            if (!messageText) return;
-
-            // 1. Mostrar el mensaje del usuario en pantalla
-            appendMessage('user', messageText, '👤');
-            userInput.value = '';
-
-            // 2. Colocar un mensaje de "Escribiendo..." temporal
-            const loadingDiv = document.createElement('div');
+        function showLoading() {
+            if (loadingDiv) return;
+            loadingDiv = document.createElement('div');
             loadingDiv.className = "flex items-start space-x-3 max-w-[85%] animate-pulse";
             loadingDiv.innerHTML = `
                 <div class="bg-blue-600 text-white p-2 rounded-xl text-lg">🤖</div>
@@ -130,73 +106,68 @@
             `;
             chatWindow.appendChild(loadingDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function removeLoading() {
+            if (loadingDiv && chatWindow.contains(loadingDiv)) {
+                chatWindow.removeChild(loadingDiv);
+                loadingDiv = null;
+            }
+        }
+
+        // 2. Escuchar cuando Botpress RESPONDE para pintarlo en tu interfaz
+        window.botpressWebChat.onEvent((event) => {
+            // Cuando el bot empieza a procesar/escribir
+            if (event.type === 'START_TYPING' || event.type === 'TYPING') {
+                showLoading();
+            }
+            
+            // Cuando el bot se detiene o termina
+            if (event.type === 'STOP_TYPING') {
+                // Opcional: Se puede manejar aquí o esperar el mensaje
+            }
+
+            // Cuando llega un mensaje real del bot de Botpress
+            if (event.type === 'MESSAGE_RECEIVED') {
+                removeLoading();
+                
+                // Evitamos duplicar mensajes si por alguna razón el evento se dispara dos veces
+                if (event.value && event.value.payload && event.value.payload.text) {
+                    const aiText = event.value.payload.text;
+                    
+                    // Pequeña validación: No repetir el mensaje de bienvenida inicial
+                    if (!aiText.includes("Saludos. Soy el asistente automatizado")) {
+                        appendMessage('ai', aiText, '🤖');
+                    }
+                }
+            }
+        }, ['MESSAGE_RECEIVED', 'START_TYPING', 'STOP_TYPING']);
+
+        // 3. Escuchar cuando el usuario envía el formulario en TU página
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageText = userInput.value.trim();
+            if (!messageText) return;
+
+            // Mostrar el mensaje en tu UI
+            appendMessage('user', messageText, '👤');
+            userInput.value = '';
+
+            // Mostrar "Analizando trazas..." inmediatamente
+            showLoading();
 
             try {
-                // Asegurar que tenemos un ID de conversación activo
-                const currentConvId = await getOrCreateConversation();
-
-                // 3. Enviar el mensaje a la API de Botpress
-                const sendResponse = await fetch(`${BASE_URL}/messages`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${BOT_API_KEY}`,
-                        'x-bot-id': BOT_ID,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        conversationId: currentConvId,
-                        payload: {
-                            type: 'text',
-                            text: messageText
-                        }
-                    })
+                // Enviar el mensaje de forma transparente a través del cliente oficial de Botpress
+                window.botpressWebChat.sendPayload({
+                    type: 'text',
+                    text: messageText
                 });
-
-                // 4. Esperar una breve ventana y recuperar la respuesta del Bot
-                // (Botpress procesa de forma asíncrona, solicitamos la lista de mensajes actualizada)
-                await new Promise(resolve => setTimeout(resolve, 2000)); 
-
-                const listResponse = await fetch(`${BASE_URL}/conversations/${currentConvId}/messages`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${BOT_API_KEY}`,
-                        'x-bot-id': BOT_ID
-                    }
-                });
-                
-                const messagesData = await listResponse.json();
-                
-                // Quitamos el indicador de carga
-                chatWindow.removeChild(loadingDiv);
-
-                // Buscamos el último mensaje que pertenezca al bot y no al usuario
-                const botMessages = messagesData.messages.filter(m => m.userId !== BOT_ID); // Dependiendo de la estructura v1, filtraremos los mensajes entrantes
-                
-                if (messagesData.messages && messagesData.messages.length > 0) {
-                    // Tomamos el último mensaje de la lista (asumiendo que es la respuesta de la IA)
-                    const lastMessage = messagesData.messages[0]; // La API suele devolverlos ordenados por el más reciente primero
-                    
-                    let aiResponse = "";
-                    if(lastMessage.payload && lastMessage.payload.text) {
-                        aiResponse = lastMessage.payload.text;
-                    } else {
-                        aiResponse = "Procesamiento completado. Por favor, verifica las alertas en el panel principal.";
-                    }
-                    
-                    appendMessage('ai', aiResponse, '🤖');
-                } else {
-                    appendMessage('ai', "Reporte recibido. Procesando mitigación en segundo plano.", '🤖');
-                }
-
             } catch (error) {
-                console.error("Error en la conexión con la IA:", error);
-                if (chatWindow.contains(loadingDiv)) {
-                    chatWindow.removeChild(loadingDiv);
-                }
-                appendMessage('ai', "⚠️ Error del sistema: No se pudo establecer comunicación con el núcleo de la IA.", '❌');
+                console.error("Error enviando mensaje a Botpress:", error);
+                removeLoading();
+                appendMessage('ai', "⚠️ Error del sistema: No se pudo despachar el paquete de datos a la IA.", '❌');
             }
         });
     </script>
-
 </body>
 </html>
