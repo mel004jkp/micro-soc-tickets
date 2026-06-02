@@ -4,183 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Micro-SOC - Asistente de IA</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #bp-embedded-webchat {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
+    <script src="https://files.bpcontent.cloud/2026/06/02/17/20260602175642-75OX20PJ.js" defer></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-between font-sans">
+
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
 
     <header class="w-full max-w-6xl mx-auto px-6 py-4 flex justify-between items-center border-b border-gray-800">
         <div class="flex items-center space-x-2">
-            <a href="index.html" class="text-gray-400 hover:text-white transition mr-2">← Volver</a>
+            <a href="index.html" class="text-gray-400 hover:text-white transition mr-2">
+                ← Volver
+            </a>
+
             <span class="text-2xl">🤖</span>
-            <span class="text-xl font-bold tracking-wider text-blue-400">Analista IA - Nivel 1</span>
+
+            <span class="text-xl font-bold tracking-wider text-blue-400">
+                Analista IA - Nivel 1
+            </span>
         </div>
+
         <span class="text-xs bg-green-950 text-green-400 border border-green-700 px-3 py-1 rounded-full font-mono flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> En Línea
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            En Línea
         </span>
     </header>
 
-    <main class="w-full max-w-3xl mx-auto p-4 flex-grow flex flex-col justify-between overflow-hidden h-[calc(100vh-140px)]">
-        
-        <div id="chatWindow" class="flex-grow overflow-y-auto space-y-4 p-4 border border-gray-800 bg-gray-950/50 rounded-2xl mb-4 scrollbar-thin scrollbar-thumb-gray-800">
-            
-            <div class="flex items-start space-x-3 max-w-[85%]">
-                <div class="bg-blue-600 text-white p-2 rounded-xl text-lg shadow-md">🤖</div>
-                <div class="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-none border border-gray-700 text-sm">
-                    Saludos. Soy el asistente automatizado del Micro-SOC. Puedo ayudarte a evaluar sospechas de phishing, revisar si tu red hogareña es vulnerable o guiarte para levantar un ticket de soporte técnico. ¿Qué anomalía digital estás experimentando?
-                </div>
-            </div>
-
-        </div>
-
-        <form id="chatForm" class="flex gap-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
-            <input 
-                type="text" 
-                id="userInput" 
-                placeholder="Escribe tu consulta de seguridad aquí..." 
-                class="flex-grow bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none px-3"
-                required
-                autocomplete="off"
-            >
-            <button 
-                type="submit" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm transition duration-200 shadow-md flex items-center space-x-1"
-            >
-                <span>Enviar</span>
-                <span>⚡</span>
-            </button>
-        </form>
-
+    <main class="w-full max-w-4xl mx-auto p-4 flex-grow">
+        <section class="h-[calc(100vh-120px)] border border-gray-800 bg-gray-950/50 rounded-2xl overflow-hidden shadow-xl">
+            <div id="bp-embedded-webchat"></div>
+        </section>
     </main>
 
-    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
-    
-    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
-    
-    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
-    
-    <script>
-        const chatWindow = document.getElementById('chatWindow');
-        const chatForm = document.getElementById('chatForm');
-        const userInput = document.getElementById('userInput');
-        const sendButton = chatForm.querySelector('button');
-
-        const BOT_ID = "a189e7b5-3cb5-4cb5-9ee1-1898247e2d0f"; 
-
-        // Bloqueo temporal de UI mientras se sincroniza
-        userInput.disabled = true;
-        sendButton.disabled = true;
-        userInput.placeholder = "Estableciendo canal seguro con el SOC...";
-
-        // Inicializar de forma estándar (Quitamos el "hideWidget" para evitar su bug interno)
-        window.botpressWebChat.init({
-            "botId": BOT_ID,
-            "hostUrl": "https://cdn.botpress.cloud/webchat/v1",
-            "messagingUrl": "https://messaging.botpress.cloud",
-            "clientId": BOT_ID,
-            "disableAnimations": true
-        });
-
-        // TRUCO DE INYECCIÓN CSS: Forzamos la desaparición del widget original de Botpress apenas aparezca
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #bp-webchat-container, .bpw-widget-button, #bpw-widget { 
-                display: none !important; 
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Renderizar mensajes en tu interfaz oscura de Tailwind
-        function appendMessage(sender, text, avatar) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex items-start space-x-3 max-w-[85%] ${sender === 'user' ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
-            
-            const avatarBg = sender === 'user' ? 'bg-indigo-600' : 'bg-blue-600';
-            const bubbleBg = sender === 'user' ? 'bg-indigo-900/40 border-indigo-700 text-indigo-100 rounded-tr-none' : 'bg-gray-800 border-gray-700 text-gray-200 rounded-tl-none';
-
-            messageDiv.innerHTML = `
-                <div class="${avatarBg} text-white p-2 rounded-xl text-lg shadow-md">${avatar}</div>
-                <div class="${bubbleBg} p-3 rounded-2xl border text-sm shadow-sm whitespace-pre-line">${text}</div>
-            `;
-            
-            chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight; 
-        }
-
-        let loadingDiv = null;
-
-        function showLoading() {
-            if (loadingDiv) return;
-            loadingDiv = document.createElement('div');
-            loadingDiv.className = "flex items-start space-x-3 max-w-[85%] animate-pulse";
-            loadingDiv.innerHTML = `
-                <div class="bg-blue-600 text-white p-2 rounded-xl text-lg">🤖</div>
-                <div class="bg-gray-800 text-gray-400 p-3 rounded-2xl rounded-tl-none border border-gray-700 text-sm italic">
-                    Analizando trazas de datos...
-                </div>
-            `;
-            chatWindow.appendChild(loadingDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function removeLoading() {
-            if (loadingDiv && chatWindow.contains(loadingDiv)) {
-                chatWindow.removeChild(loadingDiv);
-                loadingDiv = null;
-            }
-        }
-
-        // Captura y gestión de eventos
-        window.botpressWebChat.onEvent((event) => {
-            
-            // Cuando la API interna de mensajería está totalmente operativa
-            if (event.type === 'LIFECYCLE.LOADED') {
-                userInput.disabled = false;
-                sendButton.disabled = false;
-                userInput.placeholder = "Escribe tu consulta de seguridad aquí...";
-                console.log("Conexión limpia establecida con éxito.");
-            }
-
-            // Cuando la IA procesa
-            if (event.type === 'START_TYPING' || event.type === 'TYPING') {
-                showLoading();
-            }
-
-            // Cuando la IA responde
-            if (event.type === 'MESSAGE_RECEIVED') {
-                removeLoading();
-                
-                if (event.value && event.value.payload && event.value.payload.text) {
-                    const aiText = event.value.payload.text;
-                    
-                    // No duplicar el saludo pre-renderizado del HTML
-                    if (!aiText.includes("Saludos. Soy el asistente automatizado")) {
-                        appendMessage('ai', aiText, '🤖');
-                    }
-                }
-            }
-        }, ['LIFECYCLE.LOADED', 'MESSAGE_RECEIVED', 'START_TYPING']);
-
-        // Procesar formulario de envío
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const messageText = userInput.value.trim();
-            if (!messageText) return;
-
-            appendMessage('user', messageText, '👤');
-            userInput.value = '';
-            showLoading();
-
-            try {
-                window.botpressWebChat.sendPayload({
-                    type: 'text',
-                    text: messageText
-                });
-            } catch (error) {
-                console.error("Error al despachar comando:", error);
-                removeLoading();
-                appendMessage('ai', "⚠️ Error del sistema: Fallo en el despacho del paquete de datos.", '❌');
-            }
-        });
-    </script>
 </body>
 </html>
