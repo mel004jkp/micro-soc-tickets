@@ -65,7 +65,7 @@
         const SUPABASE_ANON_KEY = "sb_publishable_9ZMByvlQUonezPxzDVi46w_wSfitzhX";
 
         // Inicializar Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Escuchar cuando el usuario le dé clic al botón de enviar
         document.getElementById('ticketForm').addEventListener('submit', async (e) => {
@@ -78,7 +78,7 @@
             const descripcion = document.getElementById('descripcion').value;
 
             // Guardar los datos en la tabla 'tickets' de Supabase
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('tickets')
                 .insert([
                     { 
