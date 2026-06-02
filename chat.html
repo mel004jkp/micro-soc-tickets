@@ -54,27 +54,32 @@
 
     <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
     
+    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
+    
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
+        const sendButton = chatForm.querySelector('button'); // Capturamos el botón para controlarlo
 
-        // Configuración de tus credenciales
         const BOT_ID = "a189e7b5-3cb5-4cb5-9ee1-1898247e2d0f"; 
 
-        // 1. Inicializamos el cliente de Botpress en segundo plano (oculto)
+        // Deshabilitar entrada mientras inicializa
+        userInput.disabled = true;
+        sendButton.disabled = true;
+        userInput.placeholder = "Inicializando analista de seguridad...";
+
+        // Inicializar cliente oficial oculto
         window.botpressWebChat.init({
-            "composerPlaceholder": "Chat con Analista IA",
-            "botConversationDescription": "Micro-SOC",
             "botId": BOT_ID,
             "hostUrl": "https://cdn.botpress.cloud/webchat/v1",
             "messagingUrl": "https://messaging.botpress.cloud",
             "clientId": BOT_ID,
-            "hideWidget": true, // Oculta el botón flotante azul feo para usar TU diseño
+            "hideWidget": true,
             "disableAnimations": true
         });
 
-        // Función para agregar mensajes visualmente a TU pantalla de Tailwind
+        // Función para agregar mensajes visualmente a tu pantalla de Tailwind
         function appendMessage(sender, text, avatar) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex items-start space-x-3 max-w-[85%] ${sender === 'user' ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
@@ -91,7 +96,6 @@
             chatWindow.scrollTop = chatWindow.scrollHeight; 
         }
 
-        // Variable para controlar el estado de "Escribiendo..."
         let loadingDiv = null;
 
         function showLoading() {
@@ -115,49 +119,48 @@
             }
         }
 
-        // 2. Escuchar cuando Botpress RESPONDE para pintarlo en tu interfaz
+        // CONTROL DE EVENTOS DE BOTPRESS
         window.botpressWebChat.onEvent((event) => {
-            // Cuando el bot empieza a procesar/escribir
+            
+            // 1. CUANDO EL WEBCHAT ESTÁ LISTO Y CONECTADO
+            if (event.type === 'LIFECYCLE.LOADED') {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.placeholder = "Escribe tu consulta de seguridad aquí...";
+                console.log("Botpress está listo para recibir tráfico.");
+            }
+
+            // 2. CUANDO LA IA ESTÁ PENSANDO
             if (event.type === 'START_TYPING' || event.type === 'TYPING') {
                 showLoading();
             }
-            
-            // Cuando el bot se detiene o termina
-            if (event.type === 'STOP_TYPING') {
-                // Opcional: Se puede manejar aquí o esperar el mensaje
-            }
 
-            // Cuando llega un mensaje real del bot de Botpress
+            // 3. CUANDO LLEGA UN MENSAJE DE LA IA
             if (event.type === 'MESSAGE_RECEIVED') {
                 removeLoading();
                 
-                // Evitamos duplicar mensajes si por alguna razón el evento se dispara dos veces
                 if (event.value && event.value.payload && event.value.payload.text) {
                     const aiText = event.value.payload.text;
                     
-                    // Pequeña validación: No repetir el mensaje de bienvenida inicial
+                    // Evitar duplicar el saludo estático inicial del HTML si el bot lo repite
                     if (!aiText.includes("Saludos. Soy el asistente automatizado")) {
                         appendMessage('ai', aiText, '🤖');
                     }
                 }
             }
-        }, ['MESSAGE_RECEIVED', 'START_TYPING', 'STOP_TYPING']);
+        }, ['LIFECYCLE.LOADED', 'MESSAGE_RECEIVED', 'START_TYPING']);
 
-        // 3. Escuchar cuando el usuario envía el formulario en TU página
+        // ENVÍO DEL FORMULARIO
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const messageText = userInput.value.trim();
             if (!messageText) return;
 
-            // Mostrar el mensaje en tu UI
             appendMessage('user', messageText, '👤');
             userInput.value = '';
-
-            // Mostrar "Analizando trazas..." inmediatamente
             showLoading();
 
             try {
-                // Enviar el mensaje de forma transparente a través del cliente oficial de Botpress
                 window.botpressWebChat.sendPayload({
                     type: 'text',
                     text: messageText
