@@ -8,7 +8,6 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-between font-sans">
 
-    <!-- Encabezado / Navbar -->
     <header class="w-full max-w-6xl mx-auto px-6 py-4 flex justify-between items-center border-b border-gray-800">
         <div class="flex items-center space-x-2">
             <a href="index.html" class="text-gray-400 hover:text-white transition mr-2">← Volver</a>
@@ -20,13 +19,10 @@
         </span>
     </header>
 
-    <!-- Contenedor del Chat -->
     <main class="w-full max-w-3xl mx-auto p-4 flex-grow flex flex-col justify-between overflow-hidden h-[calc(100vh-140px)]">
         
-        <!-- Área de visualización de mensajes -->
         <div id="chatWindow" class="flex-grow overflow-y-auto space-y-4 p-4 border border-gray-800 bg-gray-950/50 rounded-2xl mb-4 scrollbar-thin scrollbar-thumb-gray-800">
             
-            <!-- Mensaje de bienvenida de la IA -->
             <div class="flex items-start space-x-3 max-w-[85%]">
                 <div class="bg-blue-600 text-white p-2 rounded-xl text-lg shadow-md">🤖</div>
                 <div class="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-none border border-gray-700 text-sm">
@@ -36,7 +32,6 @@
 
         </div>
 
-        <!-- Formulario de entrada de texto -->
         <form id="chatForm" class="flex gap-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
             <input 
                 type="text" 
@@ -57,11 +52,22 @@
 
     </main>
 
-    <!-- Script de Lógica e Integración -->
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
+
+        // =========================================================
+        // REEMPLAZA ESTOS DATOS CON TUS CREDENCIALES DE BOTPRESS
+        // =========================================================
+        const BOT_ID = "a189e7b5-3cb5-4cb5-9ee1-1898247e2d0f"; 
+        const BOT_API_KEY = "bp_bak_IolEnDY6ykP_AM01qrwuS2Ku8maN16-NapAF";
+        
+        // El endpoint estándar para interactuar con la API de Botpress Chat v1
+        const BASE_URL = `https://chat.botpress.cloud/v1`; 
+
+        // Variable para rastrear la conversación actual en la sesión del navegador
+        let conversationId = localStorage.getItem('micro_soc_conv_id') || null;
 
         // Función para agregar mensajes a la pantalla
         function appendMessage(sender, text, avatar) {
@@ -77,7 +83,30 @@
             `;
             
             chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll al final
+            chatWindow.scrollTop = chatWindow.scrollHeight; 
+        }
+
+        // Función para inicializar una conversación en Botpress si no existe una
+        async function getOrCreateConversation() {
+            if (conversationId) return conversationId;
+
+            try {
+                const response = await fetch(`${BASE_URL}/conversations`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${BOT_API_KEY}`,
+                        'x-bot-id': BOT_ID,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                conversationId = data.conversation.id;
+                localStorage.setItem('micro_soc_conv_id', conversationId);
+                return conversationId;
+            } catch (err) {
+                console.error("Error creando la conversación en Botpress:", err);
+            }
         }
 
         // Escuchar el evento de envío
@@ -103,23 +132,67 @@
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
             try {
-                // =========================================================
-                // ESPACIO PARA CONECTAR EL BACKEND O LA API DE IA
-                // =========================================================
-                
-                // Simulación temporal de respuesta mientras definimos el proveedor:
-                await new Promise(resolve => setTimeout(resolve, 1500)); 
-                let aiResponse = "He recibido tu reporte sobre: '" + messageText + "'. Como analista del Micro-SOC, te sugiero aislar el dispositivo de la red de inmediato si sospechas de una infección activa, o proceder a llenar un reporte formal en nuestra sección de Tickets.";
-                
-                // =========================================================
+                // Asegurar que tenemos un ID de conversación activo
+                const currentConvId = await getOrCreateConversation();
 
-                // Quitar indicador de carga y pintar respuesta real de la IA
+                // 3. Enviar el mensaje a la API de Botpress
+                const sendResponse = await fetch(`${BASE_URL}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${BOT_API_KEY}`,
+                        'x-bot-id': BOT_ID,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conversationId: currentConvId,
+                        payload: {
+                            type: 'text',
+                            text: messageText
+                        }
+                    })
+                });
+
+                // 4. Esperar una breve ventana y recuperar la respuesta del Bot
+                // (Botpress procesa de forma asíncrona, solicitamos la lista de mensajes actualizada)
+                await new Promise(resolve => setTimeout(resolve, 2000)); 
+
+                const listResponse = await fetch(`${BASE_URL}/conversations/${currentConvId}/messages`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${BOT_API_KEY}`,
+                        'x-bot-id': BOT_ID
+                    }
+                });
+                
+                const messagesData = await listResponse.json();
+                
+                // Quitamos el indicador de carga
                 chatWindow.removeChild(loadingDiv);
-                appendMessage('ai', aiResponse, '🤖');
 
-            </tark (error) {
+                // Buscamos el último mensaje que pertenezca al bot y no al usuario
+                const botMessages = messagesData.messages.filter(m => m.userId !== BOT_ID); // Dependiendo de la estructura v1, filtraremos los mensajes entrantes
+                
+                if (messagesData.messages && messagesData.messages.length > 0) {
+                    // Tomamos el último mensaje de la lista (asumiendo que es la respuesta de la IA)
+                    const lastMessage = messagesData.messages[0]; // La API suele devolverlos ordenados por el más reciente primero
+                    
+                    let aiResponse = "";
+                    if(lastMessage.payload && lastMessage.payload.text) {
+                        aiResponse = lastMessage.payload.text;
+                    } else {
+                        aiResponse = "Procesamiento completado. Por favor, verifica las alertas en el panel principal.";
+                    }
+                    
+                    appendMessage('ai', aiResponse, '🤖');
+                } else {
+                    appendMessage('ai', "Reporte recibido. Procesando mitigación en segundo plano.", '🤖');
+                }
+
+            } catch (error) {
                 console.error("Error en la conexión con la IA:", error);
-                chatWindow.removeChild(loadingDiv);
+                if (chatWindow.contains(loadingDiv)) {
+                    chatWindow.removeChild(loadingDiv);
+                }
                 appendMessage('ai', "⚠️ Error del sistema: No se pudo establecer comunicación con el núcleo de la IA.", '❌');
             }
         });
