@@ -60,7 +60,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN: Reemplaza esto con tus datos reales de Supabase
+        // CONFIGURACIÓN: Datos de Supabase
         const SUPABASE_URL = "https://tovcmeghuusrvbqtwyfp.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_9ZMByvlQUonezPxzDVi46w_wSfitzhX";
 
@@ -71,32 +71,75 @@
         document.getElementById('ticketForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // Deshabilitar el botón temporalmente para evitar múltiples envíos
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Enviando...";
+
+            // Capturar los valores del formulario
             const nombre = document.getElementById('nombre').value;
             const correo = document.getElementById('correo').value;
             const categoria = document.getElementById('categoria').value;
             const prioridad = document.getElementById('prioridad').value;
             const descripcion = document.getElementById('descripcion').value;
 
-            // Guardar los datos en la tabla 'tickets' de Supabase
-            const { data, error } = await supabaseClient
-                .from('tickets')
-                .insert([
-                    { 
+            try {
+                // ==========================================
+                // PASO 1: GUARDAR EN LA BASE DE DATOS (SUPABASE)
+                // ==========================================
+                const { data, error } = await supabaseClient
+                    .from('tickets')
+                    .insert([{ 
                         nombre: nombre, 
                         correo: correo, 
                         categoria: categoria, 
                         prioridad: prioridad, 
                         descripcion: descripcion 
-                    }
-                ]);
+                    }]);
 
-            if (error) {
-                alert("Hubo un error al enviar el ticket: " + error.message);
-                console.error("Error completo de Supabase:", error);
-            } else {
-                alert("🛡️ ¡Ticket enviado con éxito al Micro-SOC! Nos pondremos en contacto contigo.");
-                console.log("Respuesta de éxito:", data);
+                if (error) {
+                    throw new Error("Error en Supabase: " + error.message);
+                }
+
+                // ==========================================
+                // PASO 2: ENVIAR NOTIFICACIÓN AL CORREO (FORMSPREE)
+                // ==========================================
+                // Hacemos una petición POST silenciosa al enlace que creaste en Formspree
+                const formspreeResponse = await fetch("https://formspree.io/f/mnjylqbd", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    // Estructuramos el mensaje que te llegará a tu bandeja de entrada
+                    body: JSON.stringify({
+                        Alerta: "🚨 NUEVO TICKET EN MICRO-SOC",
+                        Cliente: nombre,
+                        Contacto: correo,
+                        Tipo_Incidente: categoria,
+                        Nivel_Prioridad: prioridad,
+                        Detalles: descripcion
+                    })
+                });
+
+                if (!formspreeResponse.ok) {
+                    console.warn("El ticket se guardó en Supabase, pero falló la alerta de Formspree.");
+                }
+
+                // ==========================================
+                // PASO 3: RESPUESTA VISUAL AL USUARIO
+                // ==========================================
+                alert("🛡️ ¡Ticket enviado con éxito! El equipo ha sido notificado y nos pondremos en contacto contigo.");
                 document.getElementById('ticketForm').reset();
+
+            } catch (error) {
+                // Si algo falla en todo el proceso, lo atrapamos aquí
+                alert("Hubo un problema al procesar el reporte. Por favor, intenta de nuevo.");
+                console.error("Error detectado:", error);
+            } finally {
+                // Reactivar el botón sin importar si hubo éxito o error
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Enviar Ticket de Soporte";
             }
         });
     </script>
